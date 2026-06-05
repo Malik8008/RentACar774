@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: ms-rentACar
+    restart: always
+    environment:
+      POSTGRES_USER: rentacar
+      POSTGRES_PASSWORD: 200125
+      POSTGRES_DB: msrentcar
+    ports:
+      - "5435:5432"
+    volumes:
+      - ms-rentACar_data:/var/lib/postgresql/data
+
+volumes:
+  ms-rentACar_data:
