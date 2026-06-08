@@ -51,13 +51,15 @@ public class ReservationServiceImpl implements ReservationService {
 
         if (!isAvailableCar(postDto.getCarId(),
                 postDto.getStartReservationDate(),
-                postDto.getEndReservationDate())) {
+                postDto.getEndReservationDate(),
+                null)) {
             throw new CarNotAvailableException("Car is not available for selected dates");
         }
 
         long days = ChronoUnit.DAYS.between(
                 postDto.getStartReservationDate(), postDto.getEndReservationDate()
         );
+
 
         BigDecimal totalPrice = car.getRentalPricePerDay().multiply(BigDecimal.valueOf(days));
         Reservation reservation = new Reservation();
@@ -73,23 +75,65 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public GetReservation update(Long id, PutReservation putDto) {
+        Reservation existReservation = reservationRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new IdNotFoundException("Reservation not found with id: " + id));
+        Car car = carRepository.findById(putDto.getCarId())
+                .orElseThrow(() -> new IdNotFoundException("Car not found with id: " + putDto.getCarId()));
+        Customer customer = customerRepository.findById(putDto.getCustomerId())
+                .orElseThrow(() -> new IdNotFoundException("Customer not found with id: " + putDto.getCustomerId()));
 
-        return null;
+        if (!isAvailableCar(car.getId(),
+                putDto.getStartReservationDate(),
+                putDto.getEndReservationDate(),
+                id)) {
+            throw new CarNotAvailableException("Car is not available for selected dates");
+        }
+        long days = ChronoUnit.DAYS.between(
+                putDto.getStartReservationDate(),
+                putDto.getEndReservationDate());
+
+        BigDecimal totalPrice =
+                car.getRentalPricePerDay()
+                        .multiply(BigDecimal.valueOf(days));
+
+        existReservation.setStartReservationDate(putDto.getStartReservationDate());
+        existReservation.setEndReservationDate(putDto.getEndReservationDate());
+        existReservation.setTotalPrice(totalPrice);
+        existReservation.setCar(car);
+        existReservation.setCustomer(customer);
+
+        Reservation updatedReservation = reservationRepository.save(existReservation);
+        return modelMapper.map(updatedReservation, GetReservation.class);
     }
 
     @Override
     public void delete(Long id) {
-
+        Reservation reservation = reservationRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new IdNotFoundException("Reservation not found with id: " + id));
+        reservation.setDeleted(true);
+        reservationRepository.save(reservation);
     }
 
-    private Boolean isAvailableCar(Long carId, LocalDate startDate, LocalDate endDate) {
-        List<Reservation> reservations = reservationRepository.findAllByCarIdAndIsDeletedFalse(carId);
+    private Boolean isAvailableCar(Long carId,
+                                   LocalDate startDate,
+                                   LocalDate endDate,
+                                   Long reservationId) {
+
+        List<Reservation> reservations =
+                reservationRepository.findAllByCarIdAndIsDeletedFalse(carId);
+
         for (Reservation reservation : reservations) {
+
+            if (reservation.getId().equals(reservationId)) {
+                continue;
+            }
+
             if (!(endDate.isBefore(reservation.getStartReservationDate()) ||
                     startDate.isAfter(reservation.getEndReservationDate()))) {
                 return false;
             }
         }
+
         return true;
     }
 }

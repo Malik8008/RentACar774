@@ -9,4 +9,7 @@ import java.time.LocalDate;
 public class PutReservation {
     LocalDate startReservationDate;
     LocalDate endReservationDate;
+    Long carId;
+    Long customerId;
+    BigDecimal totalPrice;
 }
