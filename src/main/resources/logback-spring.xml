@@ -1,0 +1,45 @@
+<configuration>
+
+    <springProperty
+            name="BOT_TOKEN"
+            source="telegram.bot.token"/>
+
+    <springProperty
+            name="CHAT_ID"
+            source="telegram.bot.chat-id"/>
+
+
+    <appender name="CONSOLE"
+              class="ch.qos.logback.core.ConsoleAppender">
+
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+
+    </appender>
+
+
+    <appender name="TELEGRAM"
+              class="az.rentcar.logging.TelegramAppender">
+
+        <botToken>${BOT_TOKEN}</botToken>
+        <chatId>${CHAT_ID}</chatId>
+
+    </appender>
+
+
+    <appender name="ASYNC_TELEGRAM"
+              class="ch.qos.logback.classic.AsyncAppender">
+
+        <queueSize>100</queueSize>
+        <appender-ref ref="TELEGRAM"/>
+
+    </appender>
+
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_TELEGRAM"/>
+    </root>
+
+</configuration>

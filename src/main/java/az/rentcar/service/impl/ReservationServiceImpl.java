@@ -62,10 +62,8 @@ public class ReservationServiceImpl implements ReservationService {
 
 
         BigDecimal totalPrice = car.getRentalPricePerDay().multiply(BigDecimal.valueOf(days));
-        Reservation reservation = new Reservation();
 
-        reservation.setStartReservationDate(postDto.getStartReservationDate());
-        reservation.setEndReservationDate(postDto.getEndReservationDate());
+        Reservation reservation = modelMapper.map(postDto, Reservation.class);
         reservation.setTotalPrice(totalPrice);
         reservation.setCar(car);
         reservation.setCustomer(customer);
@@ -96,8 +94,7 @@ public class ReservationServiceImpl implements ReservationService {
                 car.getRentalPricePerDay()
                         .multiply(BigDecimal.valueOf(days));
 
-        existReservation.setStartReservationDate(putDto.getStartReservationDate());
-        existReservation.setEndReservationDate(putDto.getEndReservationDate());
+        modelMapper.map(putDto, existReservation);
         existReservation.setTotalPrice(totalPrice);
         existReservation.setCar(car);
         existReservation.setCustomer(customer);

@@ -7,7 +7,6 @@ import az.rentcar.entity.Category;
 import az.rentcar.exception.IdNotFoundException;
 import az.rentcar.repository.CategoryRepository;
 import az.rentcar.service.CategoryService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -25,7 +24,6 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(()-> new IdNotFoundException("Category not found with id: " + id));
         return modelMapper.map(category, GetCategory.class);
     }
-
     @Override
     public List<GetCategory> getAll() {
         return categoryRepository.findAllByIsDeletedFalse()

@@ -15,3 +15,8 @@ spring:
 
 server:
   port: 8081
+
+telegram:
+  bot:
+    token: 8725670887:AAFRP2zL6t8Mu4-g7Zn2aGiMteGi2vEfyVg
+    chat-id: 6662922595

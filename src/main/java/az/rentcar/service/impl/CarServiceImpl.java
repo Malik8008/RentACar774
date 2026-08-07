@@ -8,7 +8,6 @@ import az.rentcar.entity.Category;
 import az.rentcar.exception.IdNotFoundException;
 import az.rentcar.repository.CarRepository;
 import az.rentcar.repository.CategoryRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
