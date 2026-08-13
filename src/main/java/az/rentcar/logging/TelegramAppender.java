@@ -28,7 +28,7 @@ public class TelegramAppender extends AppenderBase<ILoggingEvent> {
                     event.getMarkerList().stream()
                             .anyMatch(marker -> "SILENT".equals(marker.getName()));
 
-            sendTelegram(message,silent);
+            sendTelegram(message, silent);
         }
     }
 
@@ -37,7 +37,7 @@ public class TelegramAppender extends AppenderBase<ILoggingEvent> {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("🚨 RENTCAR ERROR\n\n");
+        sb.append("🚨 RENT A CAR ERROR\n\n");
         sb.append(event.getFormattedMessage());
 
         if (event.getThrowableProxy() != null) {
@@ -48,7 +48,6 @@ public class TelegramAppender extends AppenderBase<ILoggingEvent> {
             sb.append("\nReason: ")
                     .append(event.getThrowableProxy().getMessage());
         }
-
         return sb.toString();
     }
 

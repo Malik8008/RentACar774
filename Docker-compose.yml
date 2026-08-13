@@ -1,18 +1,32 @@
-version: "3.8"
+  version: "3.8"
 
-services:
-  postgres:
-    image: postgres:16
-    container_name: ms-rentACar
-    restart: always
-    environment:
-      POSTGRES_USER: rentacar
-      POSTGRES_PASSWORD: 200125
-      POSTGRES_DB: msrentcar
-    ports:
-      - "5435:5432"
-    volumes:
-      - ms-rentACar_data:/var/lib/postgresql/data
+  services:
+    postgres:
+      image: postgres:16
+      container_name: ms-rentACar
+      restart: always
+      environment:
+        POSTGRES_USER: rentacar
+        POSTGRES_PASSWORD: 200125
+        POSTGRES_DB: msrentcar
+      ports:
+        - "5435:5432"
+      volumes:
+        - ms-rentACar_data:/var/lib/postgresql/data
 
-volumes:
-  ms-rentACar_data:
+    rabbitmq:
+      image: rabbitmq:3-management
+      container_name: rabbitmq
+      restart: always
+      environment:
+        RABBITMQ_DEFAULT_USER: guest
+        RABBITMQ_DEFAULT_PASS: guest
+      ports:
+        - "5672:5672"
+        - "15672:15672"
+      volumes:
+        - rabbitmq_data:/var/lib/rabbitmq
+
+  volumes:
+    ms-rentACar_data:
+    rabbitmq_data:

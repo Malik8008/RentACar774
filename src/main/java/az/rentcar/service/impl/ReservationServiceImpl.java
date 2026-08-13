@@ -1,8 +1,10 @@
 package az.rentcar.service.impl;
 
+import az.rentcar.configuration.RabbitMQConfig;
 import az.rentcar.dto.reservationDTOs.GetReservation;
 import az.rentcar.dto.reservationDTOs.PostReservation;
 import az.rentcar.dto.reservationDTOs.PutReservation;
+import az.rentcar.dto.reservationDTOs.RentEventDTO;
 import az.rentcar.entity.Car;
 import az.rentcar.entity.Customer;
 import az.rentcar.entity.Reservation;
@@ -14,6 +16,7 @@ import az.rentcar.repository.ReservationRepository;
 import az.rentcar.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,6 +31,8 @@ public class ReservationServiceImpl implements ReservationService {
     private final CarRepository carRepository;
     private final CustomerRepository customerRepository;
     private final ModelMapper modelMapper;
+    private final RabbitTemplate rabbitTemplate;
+
 
     @Override
     public GetReservation getById(Long id) {
@@ -44,32 +49,70 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public GetReservation save(PostReservation postDto) {
-        Car car = carRepository.findById(postDto.getCarId())
-                .orElseThrow(() -> new IdNotFoundException("Car not found with id: " + postDto.getCarId()));
-        Customer customer = customerRepository.findById(postDto.getCustomerId())
-                .orElseThrow(() -> new IdNotFoundException("Customer not found with id: " + postDto.getCustomerId()));
 
-        if (!isAvailableCar(postDto.getCarId(),
+        Car car = carRepository.findById(postDto.getCarId())
+                .orElseThrow(() ->
+                        new IdNotFoundException(
+                                "Car not found with id: " + postDto.getCarId()
+                        )
+                );
+
+        Customer customer = customerRepository.findById(postDto.getCustomerId())
+                .orElseThrow(() ->
+                        new IdNotFoundException(
+                                "Customer not found with id: " + postDto.getCustomerId()
+                        )
+                );
+
+        if (!isAvailableCar(
+                postDto.getCarId(),
                 postDto.getStartReservationDate(),
                 postDto.getEndReservationDate(),
-                null)) {
-            throw new CarNotAvailableException("Car is not available for selected dates");
+                null
+        )) {
+            throw new CarNotAvailableException(
+                    "Car is not available for selected dates"
+            );
         }
 
         long days = ChronoUnit.DAYS.between(
-                postDto.getStartReservationDate(), postDto.getEndReservationDate()
+                postDto.getStartReservationDate(),
+                postDto.getEndReservationDate()
         );
 
+        BigDecimal totalPrice = car.getRentalPricePerDay()
+                .multiply(BigDecimal.valueOf(days));
 
-        BigDecimal totalPrice = car.getRentalPricePerDay().multiply(BigDecimal.valueOf(days));
+        Reservation reservation = new Reservation();
 
-        Reservation reservation = modelMapper.map(postDto, Reservation.class);
-        reservation.setTotalPrice(totalPrice);
         reservation.setCar(car);
         reservation.setCustomer(customer);
+        reservation.setStartReservationDate(
+                postDto.getStartReservationDate()
+        );
+        reservation.setEndReservationDate(
+                postDto.getEndReservationDate()
+        );
+        reservation.setTotalPrice(totalPrice);
+
         Reservation saveReservation = reservationRepository.save(reservation);
+
+        RentEventDTO event = new RentEventDTO(
+                saveReservation.getId(),
+                saveReservation.getCar().getId(),
+                saveReservation.getCustomer().getId(),
+                saveReservation.getTotalPrice()
+        );
+
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EXCHANGE,
+                RabbitMQConfig.ROUTING_KEY,
+                event
+        );
+
         return modelMapper.map(saveReservation, GetReservation.class);
     }
+
 
     @Override
     public GetReservation update(Long id, PutReservation putDto) {
@@ -130,7 +173,6 @@ public class ReservationServiceImpl implements ReservationService {
                 return false;
             }
         }
-
         return true;
     }
 }
